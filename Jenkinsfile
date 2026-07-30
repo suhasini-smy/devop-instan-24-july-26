@@ -43,7 +43,7 @@ pipeline {
                 scp -i $SSH_KEY \
                 -o StrictHostKeyChecking=no \
                 backend/target/*.jar \
-                $SSH_USER@ec2-100-54-242-230.compute-1.amazonaws.com:/home/ubuntu/
+                $SSH_USER@ec2-54-224-8-129.compute-1.amazonaws.com:/home/ubuntu/
                 '''
             }
         }
