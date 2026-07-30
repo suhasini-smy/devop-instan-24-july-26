@@ -15,41 +15,28 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh 'mvn clean package'
+                dir('backend') {
+                    sh 'mvn clean package'
+                }
             }
         }
 
         stage('Test') {
             steps {
-                sh 'mvn test'
+                dir('backend') {
+                    sh 'mvn test'
+                }
             }
         }
 
         stage('Deploy to AWS') {
             steps {
-                sshagent(credentials: ['aws-ec2-key']) {
+                sshagent(['aws-ec2-key']) {
                     sh '''
-                    scp -o StrictHostKeyChecking=no target/*.jar \
-                    ubuntu@ec2-100-54-242-230.compute-1.amazonaws.com:/home/ubuntu/
-
-                    ssh -o StrictHostKeyChecking=no \
-                    ubuntu@ec2-100-54-242-230.compute-1.amazonaws.com "
-                    pkill -f '.jar' || true
-                    nohup java -jar /home/ubuntu/*.jar > app.log 2>&1 &
-                    "
+                    scp backend/target/*.jar ubuntu@ec2-100-54-242-230.compute-1.amazonaws.com:/home/ubuntu/
                     '''
                 }
             }
-        }
-    }
-
-    post {
-        success {
-            echo 'Pipeline completed successfully.'
-        }
-
-        failure {
-            echo 'Pipeline failed.'
         }
     }
 }
