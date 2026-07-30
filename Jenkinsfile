@@ -42,14 +42,12 @@ pipeline {
                 sh '''
                 scp -i $SSH_KEY \
                 -o StrictHostKeyChecking=no \
-                target/*.jar \
+                backend/target/*.jar \
                 $SSH_USER@ec2-100-54-242-230.compute-1.amazonaws.com:/home/ubuntu/
                 '''
             }
         }
     }
-
-
 
         // stage('Deploy to AWS') {
         //     steps {
