@@ -5,19 +5,29 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                echo 'Getting code from GitHub'
+                checkout scm
             }
         }
 
         stage('Build') {
             steps {
-                echo 'Building application'
+                sh 'mvn clean package'
             }
         }
 
         stage('Test') {
             steps {
-                echo 'Running tests'
+                sh 'mvn test'
+            }
+        }
+
+        stage('Deploy to AWS') {
+            steps {
+                sshagent(['aws-ec2-key']) {
+                    sh '''
+                    scp target/*.jar ubuntu@ec2-100-54-242-230.compute-1.amazonaws.com:/home/ubuntu/
+                    '''
+                }
             }
         }
     }
