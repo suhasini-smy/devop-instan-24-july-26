@@ -77,8 +77,8 @@ pipeline {
 
                         ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no \
                         ubuntu@ec2-3-91-246-209.compute-1.amazonaws.com "
-                        sudo apt update
-                        sudo apt install apache2 -y
+                        sudo apt-get update
+                        sudo apt-get install apache2 -y
                         sudo systemctl enable apache2
                         sudo systemctl start apache2
                         "
@@ -97,9 +97,6 @@ pipeline {
                         ubuntu@ec2-3-91-246-209.compute-1.amazonaws.com "
                         sudo cp /tmp/index.html /var/www/html/index.html
                         sudo chmod 644 /var/www/html/index.html
-                        sudo apt update
-                        sudo systemctl enable apache2
-                        sudo systemctl start apache2
                         "
 
                         echo "Checking deployment"
