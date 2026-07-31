@@ -97,6 +97,7 @@ pipeline {
                         ubuntu@ec2-3-91-246-209.compute-1.amazonaws.com "
                         sudo cp /tmp/index.html /var/www/html/index.html
                         sudo chmod 644 /var/www/html/index.html
+                        sudo apt update
                         sudo systemctl enable apache2
                         sudo systemctl start apache2
                         "
