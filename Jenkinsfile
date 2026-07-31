@@ -78,6 +78,7 @@ pipeline {
                         ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no \
                         ubuntu@ec2-3-91-246-209.compute-1.amazonaws.com "
                         sudo apt-get update
+                        sudo apt-get purge apache2 apache2-utils apache2-bin apache2-data -y
                         sudo apt-get install apache2 -y
                         sudo systemctl enable apache2
                         sudo systemctl start apache2
