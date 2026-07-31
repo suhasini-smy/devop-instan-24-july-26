@@ -29,25 +29,6 @@ pipeline {
             }
         }
 
-        // stage('Deploy to AWS') {
-        //     steps {
-        //         withCredentials([
-        //             sshUserPrivateKey(
-        //                 credentialsId: 'aws-ec2-key',
-        //                 keyFileVariable: 'SSH_KEY',
-        //                 usernameVariable: 'SSH_USER'
-        //             )
-        //         ]) {
-
-        //             sh '''
-        //             scp -i $SSH_KEY \
-        //             -o StrictHostKeyChecking=no \
-        //             backend/target/*.jar \
-        //             $SSH_USER@ec2-54-224-8-129.compute-1.amazonaws.com:/home/ubuntu/
-        //             '''
-        //         }
-        //     }
-        // }
 
        stage('Deploy to AWS') {
                 steps {
@@ -65,11 +46,11 @@ pipeline {
                         # Deploy frontend HTML
                         scp -i $SSH_KEY -o StrictHostKeyChecking=no \
                         index.html \
-                        ubuntu@ec2-54-224-8-129.compute-1.amazonaws.com:/tmp/
+                        ubuntu@ec2-3-91-246-209.compute-1.amazonaws.com:/tmp/
 
                         # Move HTML file to web root
                         ssh -i $SSH_KEY -o StrictHostKeyChecking=no \
-                        ubuntu@ec2-54-224-8-129.compute-1.amazonaws.com "
+                        ubuntu@ec2-3-91-246-209.compute-1.amazonaws.com "
                         sudo mv /tmp/index.html /var/www/html/index.html
                         sudo chown www-data:www-data /var/www/html/index.html
                         "
