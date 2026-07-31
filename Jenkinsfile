@@ -97,7 +97,8 @@ pipeline {
                         ubuntu@ec2-3-91-246-209.compute-1.amazonaws.com "
                         sudo cp /tmp/index.html /var/www/html/index.html
                         sudo chmod 644 /var/www/html/index.html
-                        sudo systemctl restart apache2
+                        sudo systemctl enable apache2
+                        sudo systemctl start apache2
                         "
 
                         echo "Checking deployment"
