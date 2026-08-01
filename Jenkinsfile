@@ -5,6 +5,10 @@ pipeline {
         maven 'Maven3'
     }
 
+    environment {
+        EC2_HOST = "ec2-3-91-246-209.compute-1.amazonaws.com"
+    }
+
     stages {
 
         stage('Checkout') {
@@ -29,87 +33,82 @@ pipeline {
             }
         }
 
-
-    //    stage('Deploy to AWS') {
-    //     steps {
-    //         withCredentials([sshUserPrivateKey(
-    //             credentialsId: 'aws-ec2-key',
-    //             keyFileVariable: 'SSH_KEY',
-    //             usernameVariable: 'SSH_USER'
-    //         )]) {
-    //             sh '''
-    //             # Deploy Spring Boot JAR
-    //             scp -i $SSH_KEY -o StrictHostKeyChecking=no \
-    //             backend/target/myapp-0.0.1-SNAPSHOT.jar \
-    //             ubuntu@ec2-54-224-8-129.compute-1.amazonaws.com:/var/www/html/
-
-    //             # Deploy frontend HTML
-    //             scp -i $SSH_KEY -o StrictHostKeyChecking=no \
-    //             index.html \
-    //             ubuntu@ec2-3-91-246-209.compute-1.amazonaws.com:/tmp/
-
-    //             # Move HTML file to web root
-    //             ssh -i $SSH_KEY -o StrictHostKeyChecking=no \
-    //             ubuntu@ec2-3-91-246-209.compute-1.amazonaws.com "
-    //             sudo mv /tmp/index.html /var/www/html/index.html
-    //             sudo chown www-data:www-data /var/www/html/index.html
-    //             "
-    //             '''
-    //         }
-    //     }
-    // }
-
         stage('Deploy to AWS') {
-                steps {
-                    withCredentials([sshUserPrivateKey(
+            steps {
+                withCredentials([
+                    sshUserPrivateKey(
                         credentialsId: 'aws-ec2-key',
                         keyFileVariable: 'SSH_KEY',
                         usernameVariable: 'SSH_USER'
-                    )]) {
-                        sh '''
-                        set -ex
+                    )
+                ]) {
 
-                        pwd
-                        ls -l index.html
+                    sh '''
+                    set -eux
 
+                    echo "===== Jenkins Workspace ====="
+                    pwd
+                    ls -l
+                    ls -l index.html
 
-                        echo "Installing Apache on EC2"
+                    echo "===== Installing Apache if required ====="
 
-                        ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no \
-                        ubuntu@ec2-3-91-246-209.compute-1.amazonaws.com "
+                    ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no ubuntu@$EC2_HOST <<'EOF'
+
+                    set -eux
+
+                    if ! command -v apache2 >/dev/null 2>&1; then
                         sudo apt-get update
-                        sudo apt-get purge apache2 apache2-utils apache2-bin apache2-data -y
-                        sudo apt-get install apache2 -y
-                        sudo systemctl enable apache2
-                        sudo systemctl start apache2
-                        "
+                        sudo apt-get install -y apache2
+                    fi
 
-                        scp -v -i "$SSH_KEY" -o StrictHostKeyChecking=no \
+                    sudo mkdir -p /var/run/apache2
+                    sudo mkdir -p /var/lock/apache2
+                    sudo mkdir -p /var/log/apache2
+
+                    sudo systemctl enable apache2
+                    sudo systemctl start apache2
+
+                    EOF
+
+                    echo "===== Copying Website ====="
+
+                    scp -i "$SSH_KEY" \
+                        -o StrictHostKeyChecking=no \
                         index.html \
-                        ubuntu@ec2-3-91-246-209.compute-1.amazonaws.com:/tmp/
-                        
-                        echo "Moving file to Apache directory"
+                        ubuntu@$EC2_HOST:/tmp/index.html
 
-                        ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no \
-                        ubuntu@ec2-3-91-246-209.compute-1.amazonaws.com \
-                        "ls -l /tmp/index.html"
+                    echo "===== Deploying Website ====="
 
-                        ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no \
-                        ubuntu@ec2-3-91-246-209.compute-1.amazonaws.com "
-                        sudo cp /tmp/index.html /var/www/html/index.html
-                        sudo chmod 644 /var/www/html/index.html
-                        "
+                    ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no ubuntu@$EC2_HOST <<'EOF'
 
-                        echo "Checking deployment"
+                    set -eux
 
-                        ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no \
-                        ubuntu@ec2-3-91-246-209.compute-1.amazonaws.com \
-                        "ls -l /var/www/html/index.html"
-                        '''
-                    }
+                    sudo cp /tmp/index.html /var/www/html/index.html
+
+                    sudo chmod 644 /var/www/html/index.html
+
+                    sudo systemctl restart apache2
+
+                    echo "Deployment completed"
+
+                    ls -l /var/www/html/index.html
+
+                    EOF
+                    '''
                 }
             }
+        }
+    }
 
-       
+    post {
+
+        success {
+            echo 'Pipeline completed successfully.'
+        }
+
+        failure {
+            echo 'Pipeline failed.'
+        }
     }
 }
