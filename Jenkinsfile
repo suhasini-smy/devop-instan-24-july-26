@@ -6,7 +6,7 @@ pipeline {
     }
 
     environment {
-        EC2_HOST = "ec2-3-91-246-209.compute-1.amazonaws.com"
+        EC2_HOST = "ec2-98-84-32-80.compute-1.amazonaws.com"
     }
 
     stages {
