@@ -32,7 +32,7 @@ pipeline {
                 }
             }
         }
-        
+
             stage('Deploy to AWS') {
                 steps {
                     withCredentials([
@@ -65,9 +65,7 @@ pipeline {
                                         sudo apt-get install -y apache2
                                     fi
 
-                                    if ! command -v git >/dev/null 2>&1; then
-                                        sudo apt-get install -y git
-                                    fi
+                                    
 
                                     if ! command -v python3 >/dev/null 2>&1; then
                                         sudo apt-get install -y python3
