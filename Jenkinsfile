@@ -32,81 +32,87 @@ pipeline {
                 }
             }
         }
+        
+            stage('Deploy to AWS') {
+                steps {
+                    withCredentials([
+                        sshUserPrivateKey(
+                            credentialsId: 'aws-ec2-key',
+                            keyFileVariable: 'SSH_KEY',
+                            usernameVariable: 'SSH_USER'
+                        )
+                    ]) {
 
-                stage('Deploy to AWS') {
-                    steps {
-                        withCredentials([
-                            sshUserPrivateKey(
-                                credentialsId: 'aws-ec2-key',
-                                keyFileVariable: 'SSH_KEY',
-                                usernameVariable: 'SSH_USER'
-                            )
-                        ]) {
+                        sh '''
+                            set -eux
 
-                            sh '''
-                                set -eux
+                            echo "===== Jenkins Workspace ====="
+                            pwd
+                            ls -la
 
-                                echo "===== Jenkins Workspace ====="
-                                pwd
-                                ls -la
+                            test -f index.html
 
-                                test -f index.html
+                            echo "===== Install Required Packages ====="
 
-                                echo "===== Install Apache ====="
+                            ssh -i "$SSH_KEY" \
+                                -o StrictHostKeyChecking=no \
+                                ubuntu@$EC2_HOST '
+                                    set -eux
 
-                                ssh -i "$SSH_KEY" \
-                                    -o StrictHostKeyChecking=no \
-                                    ubuntu@$EC2_HOST '
-                                        set -eux
+                                    sudo apt-get update
 
-                                        if ! command -v apache2 >/dev/null 2>&1; then
-                                            sudo apt-get update
-                                            sudo apt-get install -y apache2
-                                        fi
+                                    if ! command -v apache2 >/dev/null 2>&1; then
+                                        sudo apt-get install -y apache2
+                                    fi
 
-                                        if ! command -v git >/dev/null 2>&1; then
-                                            sudo apt-get update
-                                            sudo apt-get install -y git
-                                        fi
+                                    if ! command -v git >/dev/null 2>&1; then
+                                        sudo apt-get install -y git
+                                    fi
 
-                                        sudo systemctl enable apache2
-                                        sudo systemctl start apache2
-                                    '
+                                    if ! command -v python3 >/dev/null 2>&1; then
+                                        sudo apt-get install -y python3
+                                    fi
 
-                                echo "===== Copy Website ====="
+                                    if ! command -v pip3 >/dev/null 2>&1; then
+                                        sudo apt-get install -y python3-pip
+                                    fi
 
-                                scp -i "$SSH_KEY" \
-                                    -o StrictHostKeyChecking=no \
-                                    index.html \
-                                    ubuntu@$EC2_HOST:/tmp/index.html
+                                    sudo systemctl enable apache2
+                                    sudo systemctl start apache2
+                                '
 
-                                echo "===== Deploy Website ====="
+                            echo "===== Copy Website ====="
 
-                                ssh -i "$SSH_KEY" \
-                                    -o StrictHostKeyChecking=no \
-                                    ubuntu@$EC2_HOST '
-                                        set -eux
+                            scp -i "$SSH_KEY" \
+                                -o StrictHostKeyChecking=no \
+                                index.html \
+                                ubuntu@$EC2_HOST:/tmp/index.html
 
-                                        sudo mkdir -p /var/www/html
+                            echo "===== Deploy Website ====="
 
-                                        sudo cp /tmp/index.html /var/www/html/index.html
+                            ssh -i "$SSH_KEY" \
+                                -o StrictHostKeyChecking=no \
+                                ubuntu@$EC2_HOST '
+                                    set -eux
 
-                                        sudo chmod 644 /var/www/html/index.html
+                                    sudo mkdir -p /var/www/html
 
-                                        sudo systemctl restart apache2
+                                    sudo cp /tmp/index.html /var/www/html/index.html
 
-                                        sudo systemctl status apache2 --no-pager
+                                    sudo chmod 644 /var/www/html/index.html
 
-                                        ls -l /var/www/html/index.html
+                                    sudo systemctl restart apache2
 
-                                        echo "Deployment completed successfully."
-                                    '
-                            '''
-                        }
+                                    sudo systemctl status apache2 --no-pager
+
+                                    ls -l /var/www/html/index.html
+
+                                    echo "Deployment completed successfully."
+                                '
+                        '''
                     }
                 }
-
-
+            }
         
     }
 
